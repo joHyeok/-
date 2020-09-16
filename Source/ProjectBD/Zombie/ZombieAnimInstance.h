@@ -25,4 +25,7 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Status")
 	float Speed;
+
+	UFUNCTION()
+	void AnimNotify_CheckAttack2(UAnimNotify* Notify);
 };

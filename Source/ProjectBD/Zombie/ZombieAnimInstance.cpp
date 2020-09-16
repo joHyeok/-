@@ -16,3 +16,8 @@ void UZombieAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	}
 
 }
+
+void UZombieAnimInstance::AnimNotify_CheckAttack2(UAnimNotify * Notify)
+{
+	UE_LOG(LogClass, Warning, TEXT("Attack2"));
+}

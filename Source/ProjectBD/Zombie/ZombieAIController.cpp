@@ -43,4 +43,14 @@ void AZombieAIController::SetCurrentState(EZombieState NewState) {
 
 void AZombieAIController::SetTarget(FVector NewLocation)
 {
+	if (BBComponent) {
+		BBComponent->SetValueAsVector(TEXT("Target"), NewLocation);
+	}
+}
+
+void AZombieAIController::SetPlayer(AActor * Player)
+{
+	if (BBComponent) {
+		BBComponent->SetValueAsObject(TEXT("Player"), Player);
+	}
 }

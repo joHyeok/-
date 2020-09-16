@@ -30,4 +30,6 @@ public:
 	void SetCurrentState(EZombieState NewState);
 
 	void SetTarget(FVector NewLocation);
+
+	void SetPlayer(AActor* Player);
 };

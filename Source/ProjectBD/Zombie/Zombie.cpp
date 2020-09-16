@@ -103,13 +103,20 @@ void AZombie::ProcessSeenPawn(APawn* Pawn)
 	if (CurrentState == EZombieState::Normal) {
 		UE_LOG(LogClass, Warning, TEXT("See %s"), *Pawn->GetName());
 		SetCurrentState(EZombieState::Chase);
+
+		//Set Blackboard Value
+		AZombieAIController* AIC = GetController<AZombieAIController>();
+		if (AIC) {
+			//AIC->SetTarget(GetActorLocation());
+			AIC->SetPlayer(Pawn);
+		}
 	}
 	
 }
 
 void AZombie::ProcessHeardPawn(APawn* Pawn, const FVector& Location, float Volume)
 {
-	UE_LOG(LogClass, Warning, TEXT("See %s"), *Pawn->GetName());
+	UE_LOG(LogClass, Warning, TEXT("Heard %s"), *Pawn->GetName());
 
 }
 
