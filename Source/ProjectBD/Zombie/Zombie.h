@@ -71,7 +71,7 @@ public:
 	void ProcessHeardPawn(APawn* Pawn, const FVector& Location, float Volume);
 
 	UFUNCTION(BlueprintCallable)
-	void SetState(EZombieState NewState);
+	void SetCurrentState(EZombieState NewState);
 
 	UFUNCTION(BlueprintCallable)
 	void SetSpeed(float NewSpeed);

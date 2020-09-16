@@ -5,6 +5,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Perception/PawnSensingComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "ZombieAIController.h"
 
 // Sets default values
 AZombie::AZombie()
@@ -27,6 +28,7 @@ void AZombie::BeginPlay()
 	CurrentHP = MaxHP;
 
 	SetSpeed(WalkSpeed);
+	SetCurrentState(EZombieState::Normal);
 
 	if (PawnSensing)
 	{
@@ -87,7 +89,7 @@ float AZombie::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, A
 
 	if (CurrentHP <= 0)
 	{
-		CurrentState = EZombieState::Dead;
+		SetCurrentState(EZombieState::Dead);
 	}
 
 
@@ -98,8 +100,11 @@ float AZombie::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, A
 
 void AZombie::ProcessSeenPawn(APawn* Pawn)
 {
-	UE_LOG(LogClass, Warning, TEXT("See %s"), *Pawn->GetName());
-	SetState(EZombieState::Chase);
+	if (CurrentState == EZombieState::Normal) {
+		UE_LOG(LogClass, Warning, TEXT("See %s"), *Pawn->GetName());
+		SetCurrentState(EZombieState::Chase);
+	}
+	
 }
 
 void AZombie::ProcessHeardPawn(APawn* Pawn, const FVector& Location, float Volume)
@@ -108,9 +113,15 @@ void AZombie::ProcessHeardPawn(APawn* Pawn, const FVector& Location, float Volum
 
 }
 
-void AZombie::SetState(EZombieState NewState)
+void AZombie::SetCurrentState(EZombieState NewState)
 {
 	CurrentState = NewState;
+
+	//Set Blackboard Value
+	AZombieAIController* AIC = GetController<AZombieAIController>();
+	if (AIC) {
+		AIC->SetCurrentState(NewState);
+	}
 }
 
 void AZombie::SetSpeed(float NewSpeed)

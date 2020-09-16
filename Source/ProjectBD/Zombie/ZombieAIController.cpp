@@ -31,4 +31,16 @@ void AZombieAIController::OnPossess(APawn * InPawn)
 void AZombieAIController::OnUnPossess()
 {
 	Super::OnUnPossess();
+	BTComponent->StopTree();
+}
+
+void AZombieAIController::SetCurrentState(EZombieState NewState) {
+	//Blackboard¿¡ ÀÔ·Â
+	if (BBComponent) {
+		BBComponent->SetValueAsEnum(TEXT("CurrentState"), (uint8)NewState);
+	}
+}
+
+void AZombieAIController::SetTarget(FVector NewLocation)
+{
 }

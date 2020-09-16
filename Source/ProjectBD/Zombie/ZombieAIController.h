@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
+#include "Zombie.h"
 #include "ZombieAIController.generated.h"
 
 /**
@@ -25,4 +26,8 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
 		class UBlackboardComponent* BBComponent;
+
+	void SetCurrentState(EZombieState NewState);
+
+	void SetTarget(FVector NewLocation);
 };
