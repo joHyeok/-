@@ -17,4 +17,27 @@ class PROJECTBD_API UTitleWidgetBase : public UUserWidget
 public:
 	//UMG Widget과 Control 변수 연결
 	virtual void NativeConstruct()override;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Control")
+	class UEditableTextBox* UserID;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Control")
+		class UEditableTextBox* Passward;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Control")
+		class UEditableTextBox* ServerIP;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Control")
+		class UButton* ConnectButton;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Control")
+		class UButton* StartButton;
+
+	UFUNCTION()
+		void OnConnectButton();
+
+	UFUNCTION()
+		void OnStartButton();
+
+	void SaveUserID();
 };

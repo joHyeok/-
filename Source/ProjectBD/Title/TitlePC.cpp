@@ -4,6 +4,7 @@
 #include "TitlePC.h"
 #include "Blueprint/UserWidget.h"
 #include "TitleWidgetBase.h"
+#include "Kismet/GameplayStatics.h"
 
 void ATitlePC::BeginPlay()
 {
@@ -18,4 +19,15 @@ void ATitlePC::BeginPlay()
 
 		SetInputMode(FInputModeUIOnly());
 	}
+}
+
+void ATitlePC::StartServer()
+{
+	//listen을 붙이면
+	UGameplayStatics::OpenLevel(GetWorld(), TEXT("Lobby"), true, TEXT("Listen"));
+}
+
+void ATitlePC::ConnectServer(FString ServerIPAddress)
+{
+	UGameplayStatics::OpenLevel(GetWorld(), FName(*ServerIPAddress));
 }

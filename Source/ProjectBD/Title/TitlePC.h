@@ -21,4 +21,10 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "UI")
 	class UTitleWidgetBase* TitleWidgetObject;
+
+	UFUNCTION(BlueprintCallable)
+	void StartServer();
+
+	UFUNCTION(BlueprintCallable)
+	void ConnectServer(FString ServerIPAddress);
 };
