@@ -40,5 +40,26 @@ void UBasicAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		FRotator AimRotation = Pawn->GetAimOffset();
 		AimYaw = AimRotation.Yaw;
 		AimPitch = AimRotation.Pitch;
+
+		bIsReload = Pawn->bIsReload;
+
+		if (Pawn->ReloadMontage && Pawn->bIsReload)
+		{
+			if (!Montage_IsPlaying(Pawn->ReloadMontage))
+			{
+				Pawn->PlayAnimMontage(Pawn->ReloadMontage);
+			}
+		}
+	}
+}
+
+void UBasicAnimInstance::AnimNotify_ReloadEnd(UAnimNotify* AnimNotify)
+{
+	ABasicPlayer* Pawn = Cast<ABasicPlayer>(TryGetPawnOwner());
+	if (Pawn && Pawn->IsValidLowLevel())
+	{
+		bIsReload = false;
+		Pawn->bIsReload = false;
+		//Pawn->C2S_SetReload(false);
 	}
 }

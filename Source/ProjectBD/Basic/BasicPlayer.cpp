@@ -15,12 +15,15 @@
 #include "BulletDamageType.h"
 #include "Components/DecalComponent.h"
 #include "MyCameraShake.h"
+#include "Net/Unrealnetwork.h"
+#include "../Battle/BattleWidgetBase.h"
+#include "../Battle/BattlePC.h"
 
 
 // Sets default values
 ABasicPlayer::ABasicPlayer()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
@@ -52,7 +55,8 @@ ABasicPlayer::ABasicPlayer()
 void ABasicPlayer::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	CurrentHP = MaxHP;
+	OnRep_CurrentHP();
 }
 
 // Called every frame
@@ -142,23 +146,56 @@ void ABasicPlayer::Turn(float AxisValue)
 
 void ABasicPlayer::Sprint()
 {
+	//Client
+	bIsSprint = true;
 	GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
+
+	//Server
+	C2S_SetSprint(true);
 }
 
 void ABasicPlayer::StopSprint()
 {
+	//Client
+	bIsSprint = false;
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+
+	//Server
+	C2S_SetSprint(false);
+
+}
+
+void ABasicPlayer::C2S_SetFire_Implementation(bool State)
+{
+	//서버에서 실행하는 함수여서 이 구문은 서버의 플레이어의 bIsFire가 변화한다
+	bIsFire = State;
+}
+
+void ABasicPlayer::C2S_SetSprint_Implementation(bool State)
+{
+	bIsSprint = State;
+	GetCharacterMovement()->MaxWalkSpeed = State ? SprintSpeed : WalkSpeed;
+}
+
+void ABasicPlayer::C2S_SetIronsight_Implementation(bool State)
+{
+	bIsIronsight = State;
 }
 
 void ABasicPlayer::StartFire()
 {
+	//내거 업데이트하고
 	bIsFire = true;
+	//서버도 업데이트하고 다시 받아서 한다.
+	//안그러면 딜레이가 생긴다.
+	C2S_SetFire(true);
 	OnFire();
 }
 
 void ABasicPlayer::StopFire()
 {
 	bIsFire = false;
+	C2S_SetFire(false);
 }
 
 void ABasicPlayer::OnFire()
@@ -212,127 +249,8 @@ void ABasicPlayer::OnFire()
 		FVector TraceStart = CameraLocation;
 		FVector TraceEnd = TraceStart + (CrosshairWorldDirection * 99999.f);
 
-		TArray<TEnumAsByte<EObjectTypeQuery>> Objects;
-
-		Objects.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_WorldDynamic));
-		Objects.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_WorldStatic));
-		Objects.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_PhysicsBody));
-
-		TArray<AActor*> ActorToIgnore;
-
-		FHitResult OutHit;
-
-		bool Result = UKismetSystemLibrary::LineTraceSingleForObjects(
-			GetWorld(),
-			TraceStart,
-			TraceEnd,
-			Objects,
-			true,
-			ActorToIgnore,
-			EDrawDebugTrace::None,
-			OutHit,
-			true,
-			FLinearColor::Red,
-			FLinearColor::Green,
-			5.0f
-		);
-
-		if (Result)
-		{
-			//HitEffect(Blood) and Decal
-			if (Cast<ACharacter>(OutHit.GetActor()))
-			{
-				//캐릭터
-				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(),
-					BloodHitEffect,
-					OutHit.ImpactPoint + (OutHit.ImpactNormal * 10)
-				);
-
-				//not use skeletalMesh
-				//UDecalComponent* NewDecal = UGameplayStatics::SpawnDecalAtLocation(GetWorld(),
-				//	NormalDecal,
-				//	FVector(5, 5, 5),
-				//	OutHit.ImpactPoint,
-				//	OutHit.ImpactNormal.Rotation(),
-				//	10.0f
-				//);
-
-				//NewDecal->SetFadeScreenSize(0.005f);
-			}
-			else
-			{
-				//지형
-				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(),
-					HitEffect,
-					OutHit.ImpactPoint + (OutHit.ImpactNormal * 10)
-				);
-
-				UDecalComponent* NewDecal = UGameplayStatics::SpawnDecalAtLocation(GetWorld(),
-					NormalDecal,
-					FVector(5, 5, 5),
-					OutHit.ImpactPoint,
-					OutHit.ImpactNormal.Rotation(),
-					10.0f
-				);
-
-				NewDecal->SetFadeScreenSize(0.005f);
-				
-			}
-
-
-			//일반 Damage
-			//UGameplayStatics::ApplyDamage(OutHit.GetActor(), //맞은놈(Pawn)
-			//	30.0f,	//데미지
-			//	GetController(), // 때린 플레이어 컨트롤러
-			//	this, //때린 Pawn(총알)
-			//	UBulletDamageType::StaticClass()
-			//);
-
-			//RadialDamage
-			//TArray<AActor*> IgnoreActors;
-			//UGameplayStatics::ApplyRadialDamage(GetWorld(), // 데미지 월드
-			//	30.0f,	//데미지량
-			//	OutHit.ImpactPoint, //데미지 발생 위치
-			//	500.0f,	//데미지 범위
-			//	UBulletDamageType::StaticClass(), //데미지 타입
-			//	IgnoreActors,	//무시할 오브젝트
-			//	this,	//때린놈
-			//	GetController(),	//때린 플레이어
-			//	true,	//풀 데미지
-			//	ECC_Visibility	//데미지 막아주는 채널 정보(충돌체)
-			//);
-
-			//Point Damage
-			UGameplayStatics::ApplyPointDamage(OutHit.GetActor(), //맞은놈
-				1.0f,	//데미지
-				-OutHit.ImpactNormal,	//데미지 방향
-				OutHit,	//데미지 충돌 정보
-				GetController(),	//때린 플레이어
-				this,	//때린놈
-				UBulletDamageType::StaticClass() //데미지 타입
-			);
-
-			MakeNoise(1.0f, this, OutHit.ImpactPoint);
-		}
+		C2S_ProcessFire(TraceStart, TraceEnd);
 	}
-
-	//WeaponSound and MuzzleFlash
-	if (WeaponSound)
-	{
-		UGameplayStatics::SpawnSoundAtLocation(GetWorld(),
-			WeaponSound,
-			Weapon->GetComponentLocation()
-		);
-	}
-
-if (MuzzleFlash)
-	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(),
-			MuzzleFlash,
-			Weapon->GetSocketTransform(TEXT("Muzzle"))
-		);
-	}
-
 
 	GetWorldTimerManager().SetTimer(FireTimerHandle,
 		this,
@@ -344,11 +262,13 @@ if (MuzzleFlash)
 void ABasicPlayer::StartIronsight()
 {
 	bIsIronsight = true;
+	C2S_SetIronsight(true);
 }
 
 void ABasicPlayer::StopIronsight()
 {
 	bIsIronsight = false;
+	C2S_SetIronsight(false);
 }
 
 void ABasicPlayer::StartCrouch()
@@ -376,6 +296,10 @@ float ABasicPlayer::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 
 	if (DamageEvent.IsOfType(FPointDamageEvent::ClassID)) //PointDamage 처리
 	{
+		//서버에서 클라이언트로 데미지 전달
+		//S2A_ProcessTakeDamage(DamageAmount, DamageEvent);
+		//이건 필요가 없다. CurrentHP가 일단 전달되기 때문에 HP에 따라서 죽는애니메이션 재생할 수 있다.
+
 		//다형성
 		FPointDamageEvent* PointDamageEvent = (FPointDamageEvent*)(&DamageEvent);
 
@@ -384,18 +308,19 @@ float ABasicPlayer::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 		if (PointDamageEvent->HitInfo.BoneName.Compare(TEXT("head")) == 0)
 		{
 			CurrentHP = 0;
-		} 
+		}
 		else
 		{
 			CurrentHP -= DamageAmount;
 		}
 
-		if (HitActionMontage)
-		{
-			FString SectionName = FString::Printf(TEXT("Hit%d"), FMath::RandRange(1, 4));
-			PlayAnimMontage(HitActionMontage, 1.0f, FName(SectionName));
-		}
+		//UI의 HPBar 업데이트
+		OnRep_CurrentHP();
 
+		//서버에서 모든 클라이언트로 Hit모션 보내기
+		//랜덤값은 서버에서 결정해서 보낸다
+		//안그러면 클라이언트마다 다른 랜덤값을 갖게 되서 다른 모션이 된다.
+		S2A_HitActionMontage(FMath::RandRange(1, 4));
 
 		CurrentHP = FMath::Clamp(CurrentHP, 0.0f, 100.0f);
 
@@ -403,20 +328,9 @@ float ABasicPlayer::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 		{
 			//죽는거
 			//애니메이션
-			if (DeadMontage)
-			{
-				FString SectionName = FString::Printf(TEXT("Death_%d"), FMath::RandRange(1, 3));
-				PlayAnimMontage(DeadMontage, 1.0f, FName(SectionName));
-			}
-
-			//물리 처리
-			//GetMesh()->SetSimulatePhysics(true);
-			//GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-			//GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-			//GetMesh()->AddImpulse(-PointDamageEvent->HitInfo.ImpactNormal * 30000.0f, PointDamageEvent->HitInfo.BoneName);
+			S2A_DeadMontage(FMath::FRandRange(1,3));
 		}
-
-	} 
+	}
 	else if (DamageEvent.IsOfType(FRadialDamageEvent::ClassID)) //RadialDamage 처리
 	{
 		FRadialDamageEvent* RadialDamageEvent = (FRadialDamageEvent*)(&DamageEvent);
@@ -429,43 +343,60 @@ float ABasicPlayer::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 
 	}
 
-
-
 	UE_LOG(LogClass, Warning, TEXT("%f"), DamageAmount);
 
 	return 0.0f;
 }
 
+void ABasicPlayer::OnRep_CurrentHP()
+{
+	ABattlePC* PC = Cast<ABattlePC>(GetController());
+	//다른 클라이언트에서의 HP가 변하지 않게 IsLocalController를 확인해준다.
+	if (PC && PC->IsLocalController())
+	{
+		PC->BattleWidgetObject->UpdateHPBar(CurrentHP / MaxHP);
+	}
+}
+
 void ABasicPlayer::Reload()
 {
-	UAnimInstance* AnimInstance = (GetMesh()) ? GetMesh()->GetAnimInstance() : nullptr;
-	if (ReloadMontage && AnimInstance)
-	{
-		if (!AnimInstance->Montage_IsPlaying(ReloadMontage))
-		{
-			PlayAnimMontage(ReloadMontage);
-		}
-	}
+	bIsReload = true;
+
+	C2S_SetReload(bIsReload);
 }
 
 void ABasicPlayer::StartLeftLean()
 {
 	bLeftLean = true;
+	C2S_SetLeftLean(true);
 }
 
 void ABasicPlayer::StopLeftLean()
 {
 	bLeftLean = false;
+	C2S_SetLeftLean(false);
 }
 
 void ABasicPlayer::StartRightLean()
 {
 	bRightLean = true;
+	C2S_SetRightLean(true);
 }
 
 void ABasicPlayer::StopRightLean()
 {
 	bRightLean = false;
+	C2S_SetRightLean(false);
+}
+
+void ABasicPlayer::C2S_SetLeftLean_Implementation(bool State)
+{
+	bLeftLean = State;
+}
+
+void ABasicPlayer::C2S_SetRightLean_Implementation(bool State)
+{
+	bRightLean = State;
 }
 
 FRotator ABasicPlayer::GetAimOffset() const
@@ -480,5 +411,183 @@ FRotator ABasicPlayer::GetAimOffset() const
 
 	return AimRotLS;
 	//return ActorToWorld().InverseTransformVectorNoScale(GetBaseAimRotation().Vector()).Rotation();
+}
+
+void ABasicPlayer::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ABasicPlayer, bIsFire);
+	DOREPLIFETIME(ABasicPlayer, bIsSprint);
+	DOREPLIFETIME(ABasicPlayer, bIsIronsight);
+	DOREPLIFETIME(ABasicPlayer, CurrentHP);
+	DOREPLIFETIME(ABasicPlayer, MaxHP);
+	DOREPLIFETIME(ABasicPlayer, bLeftLean);
+	DOREPLIFETIME(ABasicPlayer, bRightLean);
+	DOREPLIFETIME(ABasicPlayer, bIsReload);
+}
+
+void ABasicPlayer::C2S_ProcessFire_Implementation(FVector TraceStart, FVector TraceEnd)
+{
+	TArray<TEnumAsByte<EObjectTypeQuery>> Objects;
+
+	Objects.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_WorldDynamic));
+	Objects.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_WorldStatic));
+	Objects.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_PhysicsBody));
+
+	TArray<AActor*> ActorToIgnore;
+
+	FHitResult OutHit;
+
+	bool Result = UKismetSystemLibrary::LineTraceSingleForObjects(
+		GetWorld(),
+		TraceStart,
+		TraceEnd,
+		Objects,
+		true,
+		ActorToIgnore,
+		EDrawDebugTrace::None,
+		OutHit,
+		true,
+		FLinearColor::Red,
+		FLinearColor::Green,
+		5.0f
+	);
+
+	if (Result)
+	{
+		S2A_SpawnHitEffectAndDecal(OutHit);
+
+		//일반 Damage
+		//UGameplayStatics::ApplyDamage(OutHit.GetActor(), //맞은놈(Pawn)
+		//	30.0f,	//데미지
+		//	GetController(), // 때린 플레이어 컨트롤러
+		//	this, //때린 Pawn(총알)
+		//	UBulletDamageType::StaticClass()
+		//);
+
+		//RadialDamage
+		//TArray<AActor*> IgnoreActors;
+		//UGameplayStatics::ApplyRadialDamage(GetWorld(), // 데미지 월드
+		//	30.0f,	//데미지량
+		//	OutHit.ImpactPoint, //데미지 발생 위치
+		//	500.0f,	//데미지 범위
+		//	UBulletDamageType::StaticClass(), //데미지 타입
+		//	IgnoreActors,	//무시할 오브젝트
+		//	this,	//때린놈
+		//	GetController(),	//때린 플레이어
+		//	true,	//풀 데미지
+		//	ECC_Visibility	//데미지 막아주는 채널 정보(충돌체)
+		//);
+
+		//Point Damage
+		UGameplayStatics::ApplyPointDamage(OutHit.GetActor(), //맞은놈
+			1.0f,	//데미지
+			-OutHit.ImpactNormal,	//데미지 방향
+			OutHit,	//데미지 충돌 정보
+			GetController(),	//때린 플레이어
+			this,	//때린놈
+			UBulletDamageType::StaticClass() //데미지 타입
+		);
+
+		MakeNoise(1.0f, this, OutHit.ImpactPoint);
+	}
+	
+	//서버에서 모든 클라이언트로 보내기
+	S2A_SpawnMuzzleFlashAndSound();
+}
+
+void ABasicPlayer::S2A_SpawnMuzzleFlashAndSound_Implementation()
+{
+	//WeaponSound and MuzzleFlash
+	if (WeaponSound)
+	{
+		UGameplayStatics::SpawnSoundAtLocation(GetWorld(),
+			WeaponSound,
+			Weapon->GetComponentLocation()
+		);
+	}
+
+	if (MuzzleFlash)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(),
+			MuzzleFlash,
+			Weapon->GetSocketTransform(TEXT("Muzzle"))
+		);
+	}
+}
+
+void ABasicPlayer::S2A_SpawnHitEffectAndDecal_Implementation(FHitResult OutHit)
+{
+	//HitEffect(Blood) and Decal
+	if (Cast<ACharacter>(OutHit.GetActor()))
+	{
+		//캐릭터
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(),
+			BloodHitEffect,
+			OutHit.ImpactPoint + (OutHit.ImpactNormal * 10)
+		);
+
+		//not use skeletalMesh
+		//UDecalComponent* NewDecal = UGameplayStatics::SpawnDecalAtLocation(GetWorld(),
+		//	NormalDecal,
+		//	FVector(5, 5, 5),
+		//	OutHit.ImpactPoint,
+		//	OutHit.ImpactNormal.Rotation(),
+		//	10.0f
+		//);
+
+		//NewDecal->SetFadeScreenSize(0.005f);
+	}
+	else
+	{
+		//지형
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(),
+			HitEffect,
+			OutHit.ImpactPoint + (OutHit.ImpactNormal * 10)
+		);
+
+		UDecalComponent* NewDecal = UGameplayStatics::SpawnDecalAtLocation(GetWorld(),
+			NormalDecal,
+			FVector(5, 5, 5),
+			OutHit.ImpactPoint,
+			OutHit.ImpactNormal.Rotation(),
+			10.0f
+		);
+
+		NewDecal->SetFadeScreenSize(0.005f);
+
+	}
+}
+
+void ABasicPlayer::S2A_HitActionMontage_Implementation(int Number)
+{
+	if (HitActionMontage)
+	{
+		FString SectionName = FString::Printf(TEXT("Hit%d"), Number);
+		PlayAnimMontage(HitActionMontage, 1.0f, FName(SectionName));
+	}
+}
+
+void ABasicPlayer::S2A_DeadMontage_Implementation(int Number)
+{
+	if (DeadMontage)
+	{
+		FString SectionName = FString::Printf(TEXT("Death_%d"), Number);
+		PlayAnimMontage(DeadMontage, 1.0f, FName(SectionName));
+
+		//물리 처리
+			//GetMesh()->SetSimulatePhysics(true);
+			//GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+			//GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			//GetMesh()->AddImpulse(-PointDamageEvent->HitInfo.ImpactNormal * 30000.0f, PointDamageEvent->HitInfo.BoneName);
+	}
+
+	DisableInput(Cast<APlayerController>(GetController()));
+}
+
+void ABasicPlayer::C2S_SetReload_Implementation(bool newState)
+{
+	bIsReload = newState;
 }
 

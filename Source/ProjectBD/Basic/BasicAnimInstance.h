@@ -43,4 +43,10 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Status")
 	float AimPitch;
+
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Status")
+	float bIsReload;
+
+	UFUNCTION()
+	void AnimNotify_ReloadEnd(UAnimNotify* AnimNotify);
 };

@@ -13,5 +13,12 @@ UCLASS()
 class PROJECTBD_API ABattlePC : public APlayerController
 {
 	GENERATED_BODY()
-	
+public:
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "UI")
+		TSubclassOf<class UBattleWidgetBase> BattleWidgetClass;
+
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "UI")
+		class UBattleWidgetBase* BattleWidgetObject;
+
+	virtual void BeginPlay() override;
 };
