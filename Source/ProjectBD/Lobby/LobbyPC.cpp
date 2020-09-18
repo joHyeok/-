@@ -33,6 +33,12 @@ void ALobbyPC::BeginPlay()
 			if (LobbyWidgetObject)
 			{
 				LobbyWidgetObject->AddToViewport();
+
+				//권한이 있냐? : 즉 서버냐
+				if (!HasAuthority())
+				{
+					LobbyWidgetObject->HideStartGameButton();
+				}
 			}
 
 			//마우스와 키보드 입력 동시받기

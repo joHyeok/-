@@ -1,0 +1,14 @@
+﻿1>------ Skipped Build: Project: UE4, Configuration: BuiltWithUnrealBuildTool Win32 ------
+1>Project not selected to build for this solution configuration 
+2>------ Build started: Project: ProjectBD, Configuration: Development_Editor x64 ------
+2>Using 'git status' to determine working set for adaptive non-unity build (C:\Users\STL\Documents\Unreal Projects\RealNewProjectBD\RealNewProjectBD).
+2>Building ProjectBDEditor...
+2>Using Visual Studio 2017 14.16.27042 toolchain (C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.16.27023) and Windows 10.0.17763.0 SDK (C:\Program Files (x86)\Windows Kits\10).
+2>Building 4 actions with 16 processes...
+2>  [1/4] LobbyWidgetBase.cpp
+2>C:\Users\STL\Documents\Unreal Projects\RealNewProjectBD\RealNewProjectBD\Source\ProjectBD\Lobby\LobbyWidgetBase.cpp(102): error C2001: newline in constant
+2>C:\Users\STL\Documents\Unreal Projects\RealNewProjectBD\RealNewProjectBD\Source\ProjectBD\Lobby\LobbyWidgetBase.cpp(103): error C2143: syntax error: missing ')' before 'if'
+2>C:\Users\STL\Documents\Unreal Projects\RealNewProjectBD\RealNewProjectBD\Source\ProjectBD\Lobby\LobbyWidgetBase.cpp(103): error C2143: syntax error: missing ';' before 'if'
+2>C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\VC\VCTargets\Microsoft.MakeFile.Targets(44,5): error MSB3073: The command ""C:\Program Files\Epic Games\UE_4.25\Engine\Build\BatchFiles\Build.bat" ProjectBDEditor Win64 Development -Project="C:\Users\STL\Documents\Unreal Projects\RealNewProjectBD\RealNewProjectBD\ProjectBD.uproject" -WaitMutex -FromMsBuild" exited with code 6.
+2>Done building project "ProjectBD.vcxproj" -- FAILED.
+========== Build: 0 succeeded, 1 failed, 0 up-to-date, 1 skipped ==========

@@ -373,3 +373,24 @@ true면 실행된다.
 1번 클라이언트가 채팅을 치면 친 내용을 서버로 보내고 서버에서 각 컨트롤러에 채팅을 쳤다고 알린다
 즉, 동작 실행은 서버에서 하게된다. 서버에서 각 컨트롤러에 채팅내용을 입력하라고 보내고 각 컨트롤러는
 각자가 속한 클라이언트에서 채팅내용을 입력한다
+
+
+0918
+1. GameMode에 PreLogin : 로그인전에 인증을 한다. 인증중에 에러가 뜨면 접속하지 않는다.
+Login : 인증 후에 캐릭터같은걸 어떻ㄱ 만들건지 정한다.
+PostLogin : 전부 다 생기고 제어를 어떻게 할지
+
+2. Replicated 를 붙여서 네트워크에서 사용할 때는 
+virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+를 붙여서 사용해야 복사생성된다. OutLifetimeProps) 에 넣어서 동작
+DOREPLIFETIME를 써서 네트워크에서 동작하게 한다. 
+#include "Net/Unrealnetwork.h"를 추가ㅐ야 쓸수있다.
+
+3.젠킨스라는걸 회사에서 쓴다고 함
+
+4. 실행파일 바로가기 만들고 속성에 대상에 -windowed -resx=800 -resy=600를 추가하면 창모드로 변경
+
+5. 서버 트레벌으로 이동을 할때 테스트 할려고 리슨 접속으로 해서 플레이하면 클라이언트는 이동을 안한다
+오프라인으로 하고 시작후 접속해서 해야 클라이언트도 같이 간다.
+게임모드 블프 열어서 Use Seamless Travel를 체크하면 레벨 로딩중에 코딱지만한 맵을 만들고 제어권을 주고
+본 맵을 로딩한다. 매끄러운 로딩이 가능하다. 근데 에디터에서는 동작 안함 빌드해야지 나옴

@@ -1,13 +1,16 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "LobbyWidgetBase.h"
 #include "Components/EditableTextBox.h"
-#include "LobbyPC.h"
 #include "Components/TextBlock.h"
 #include "Components/ScrollBox.h"
-#include "../BDGameInstance.h"
+#include "Components/Button.h"
 #include "Kismet/GameplayStatics.h"
+#include "../BDGameInstance.h"
+#include "LobbyPC.h"
+#include "LobbyGS.h"
+#include "LobbyGM.h"
 
 void ULobbyWidgetBase::NativeConstruct()
 {
@@ -17,11 +20,22 @@ void ULobbyWidgetBase::NativeConstruct()
 
 	if (ChatInput)
 	{
-		//ÅØ½ºÆ®¸¦ ÀÎÁöÇÏ´Â °Í. ¿£ÅÍ¸¦ ´©¸£¸é ÀÔ·ÂµÈ´Ù.
+		//í…ìŠ¤íŠ¸ë¥¼ ì¸ì§€í•˜ëŠ” ê²ƒ. ì—”í„°ë¥¼ ëˆ„ë¥´ë©´ ì…ë ¥ëœë‹¤.
 		ChatInput->OnTextCommitted.AddDynamic(this, &ULobbyWidgetBase::ProcessTextCommited);
 	}
 
 	ChatBox = Cast<UScrollBox>(GetWidgetFromName(TEXT("ChatBox")));
+
+	ConnectCount = Cast<UTextBlock>(GetWidgetFromName(TEXT("ConnectCounts")));
+	PublicMessage = Cast<UTextBlock>(GetWidgetFromName(TEXT("PublicMessagee")));
+
+	GameStartButton = Cast<UButton>(GetWidgetFromName(TEXT("GameStartButton")));
+
+	if (GameStartButton)
+	{
+		GameStartButton->OnClicked.AddDynamic(this, &ULobbyWidgetBase::PressStartGameButton);
+	}
+
 }
 
 void ULobbyWidgetBase::ProcessTextCommited(const FText & Text, ETextCommit::Type CommitMethod)
@@ -32,7 +46,7 @@ void ULobbyWidgetBase::ProcessTextCommited(const FText & Text, ETextCommit::Type
 		break;
 	case ETextCommit::OnEnter:
 	{
-		//Local PC -> Host PC È£ÃâÀº ·ÎÄÃ¿¡¼­, ½ÇÇàÀº È£½ºÆ®¿¡¼­
+		//Local PC -> Host PC í˜¸ì¶œì€ ë¡œì»¬ì—ì„œ, ì‹¤í–‰ì€ í˜¸ìŠ¤íŠ¸ì—ì„œ
 
 		ALobbyPC* PC = GetOwningPlayer<ALobbyPC>();
 		if (PC)
@@ -42,10 +56,10 @@ void ULobbyWidgetBase::ProcessTextCommited(const FText & Text, ETextCommit::Type
 			{
 				FString Temp = FString::Printf(TEXT("%s : %s"), *GI->GetUserID(), *Text.ToString());
 
-				//¿£ÅÍ¸¦ ´©¸£¸é ¼­¹ö·Î Ã¤ÆÃÃÆ´Ù°í ¾Ë¸°´Ù
+				//ì—”í„°ë¥¼ ëˆ„ë¥´ë©´ ì„œë²„ë¡œ ì±„íŒ…ì³¤ë‹¤ê³  ì•Œë¦°ë‹¤
 				PC->C2S_SendMessage(FText::FromString(Temp));
 
-				//ChatInputÃ¢¿¡ ¾´ ¹®ÀÚµé Áö¿ì±â
+				//ChatInputì°½ì— ì“´ ë¬¸ìë“¤ ì§€ìš°ê¸°
 				ChatInput->SetText(FText::FromString(TEXT("")));
 			}
 		}
@@ -55,9 +69,9 @@ void ULobbyWidgetBase::ProcessTextCommited(const FText & Text, ETextCommit::Type
 		break;
 	case ETextCommit::OnCleared:
 	{
-		//ChatInputÀ» Áö¿ì¸é Æ÷Ä¿½º°¡ »ç¶óÁø´Ù
-		//±×·¡¼­ Æ÷Ä¿½º¸¦ ÇÃ·¹ÀÌ¾îÄÁÆ®·Ñ·¯·Î ¸ÂÃçÁØ´Ù
-		//±×·³ ´Ù½Ã Æ÷Ä¿½º°¡ ¸ÂÃçÁø´Ù
+		//ChatInputì„ ì§€ìš°ë©´ í¬ì»¤ìŠ¤ê°€ ì‚¬ë¼ì§„ë‹¤
+		//ê·¸ë˜ì„œ í¬ì»¤ìŠ¤ë¥¼ í”Œë ˆì´ì–´ì»¨íŠ¸ë¡¤ëŸ¬ë¡œ ë§ì¶°ì¤€ë‹¤
+		//ê·¸ëŸ¼ ë‹¤ì‹œ í¬ì»¤ìŠ¤ê°€ ë§ì¶°ì§„ë‹¤
 		ChatInput->SetUserFocus(GetOwningPlayer());
 	}
 		break;
@@ -68,19 +82,60 @@ void ULobbyWidgetBase::AddMessage(FText Message)
 {
 	if (ChatBox)
 	{
-		//ÅØ½ºÆ® ºí·Ï µ¿Àû »ı¼º
-		//(¾îµğ¿¡ ¸¸µé°ÇÁö)
+		//í…ìŠ¤íŠ¸ ë¸”ë¡ ë™ì  ìƒì„±
+		//(ì–´ë””ì— ë§Œë“¤ê±´ì§€)
 		UTextBlock* NewTextBlock = NewObject<UTextBlock>(ChatBox);
 
 		if (NewTextBlock)
 		{
-			//µ¿Àû»ı¼ºÇÑ ÅØ½ºÆ®¿¡ ¼­¹ö¿¡¼­ º¸³»¿Â ÅØ½ºÆ®¸¦ ÀÔ·ÂÇÑ´Ù.
+			//ë™ì ìƒì„±í•œ í…ìŠ¤íŠ¸ì— ì„œë²„ì—ì„œ ë³´ë‚´ì˜¨ í…ìŠ¤íŠ¸ë¥¼ ì…ë ¥í•œë‹¤.
 			NewTextBlock->SetText(Message);
 			NewTextBlock->Font.Size = 18;
-			//ÀÚ½Ä±¸Á¶ ¼³Á¤
+			//ìì‹êµ¬ì¡° ì„¤ì •
 			ChatBox->AddChild(NewTextBlock);
-			//¹ØÀ¸·Î ³»·Á°¡¶ó Ã¤ÆÃÀ» Ä¡¸é ÃÖ½Å Ã¤ÆÃÀÌ ³ª¿Í¾ßÇÏ¹Ç·Î °¡Àå ¹ØÀ¸·Î ³»·Á°¡¾ßÇÑ´Ù
+			//ë°‘ìœ¼ë¡œ ë‚´ë ¤ê°€ë¼ ì±„íŒ…ì„ ì¹˜ë©´ ìµœì‹  ì±„íŒ…ì´ ë‚˜ì™€ì•¼í•˜ë¯€ë¡œ ê°€ì¥ ë°‘ìœ¼ë¡œ ë‚´ë ¤ê°€ì•¼í•œë‹¤
 			ChatBox->ScrollToEnd();
 		}
+	}
+}
+
+//void ULobbyWidgetBase::NativeTick(const FGeometry & MyGeometry, float InDeltaTime)
+//{
+//	Super::NativeTick(MyGeometry, InDeltaTime);
+//}
+
+void ULobbyWidgetBase::SetConnectCount(int NewConnectCount)
+{
+	FString Temp = FString::Printf(TEXT("%dëª… ì ‘ì†"), NewConnectCount);
+	if (ConnectCount)
+	{
+		ConnectCount->SetText(FText::FromString(Temp));
+	}
+
+}
+
+void ULobbyWidgetBase::SetPublicMessage(int LeftTime)
+{
+	FString Temp = FString::Printf(TEXT("%dì´ˆ ë‚¨ì•˜ìŠµë‹ˆë‹¤."), LeftTime);
+	if (PublicMessage)
+	{
+		PublicMessage->SetText(FText::FromString(Temp));
+	}
+}
+
+void ULobbyWidgetBase::PressStartGameButton()
+{
+	ALobbyGM* GM = Cast<ALobbyGM>(UGameplayStatics::GetGameMode(GetWorld()));
+	if (GM)
+	{
+		GM->StartGame();
+	}
+}
+
+void ULobbyWidgetBase::HideStartGameButton()
+{
+	if (GameStartButton)
+	{
+		GameStartButton->SetVisibility(ESlateVisibility::Collapsed);
 	}
 }
