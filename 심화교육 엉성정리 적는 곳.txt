@@ -413,3 +413,22 @@ DOREPLIFETIME를 써서 네트워크에서 동작하게 한다.
 리로드의 상태값은 동기화시켜 놓고 AnimInstance에서 리로드의 상태를 읽어서 리로드애니메이션을 실행한다.
 CurrentHP가 동기화 되고 있으므로 TakeDamage를 동기화 하지 않고 체력만 동기화 해서
 죽는 애니메이션 같은 걸 처리할 수 있다.
+
+
+
+0921
+1. Basic Player에서 현재체력을 동기화할 때 UI의 체력바도 동기화하는데 UI가 생성되지 않을때 접근하면
+에러가 난다. UI가 생성되어있는지 if문으로 체크하는걸 필수로 하자
+
+2. Take Damage는 서버에서만 실행하도록 하자
+게임모드는 서버에만 있어야한다.
+
+3. 게임모드에서 Logout은 서버에서 컨트롤러가 끊킬 때 호출된다. 서버에서 끊키게 하는 함수가 있다.disconnect일듯
+
+4. serialize직렬화 deserialize역직렬화
+class Player{ int Item, int gold, int level;}
+new Player => c++ 생성
+RAM에 써짐 -> 프로그램을 끄면 날라감 -> 안 지워지게 할려면? 저장해야한다.
+저장 : RAM->보조기억장치로 이동 File로 저장한다.
+
+5. ItemPoint 모양은 플레이중에 안나와서 #if WITH_EDITORONLY_DATA로 작성해준다. 

@@ -7,8 +7,9 @@
 
 void UBattleWidgetBase::NativeConstruct()
 {
-	AliveCount = Cast<UTextBlock>(GetWidgetFromName(TEXT("AliveCount")));
-	HPBar = Cast<UProgressBar>(GetWidgetFromName(TEXT("HPBar")));
+	Super::NativeConstruct();
+	AliveCount = Cast<UTextBlock>(GetWidgetFromName(TEXT("AliveCount_WB")));
+	HPBar = Cast<UProgressBar>(GetWidgetFromName(TEXT("HPBar_WB")));
 }
 
 void UBattleWidgetBase::SetAliveCount(int NewCount)

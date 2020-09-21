@@ -10,6 +10,9 @@
 void ALobbyGS::OnRep_ConnectCount()
 {
 	ALobbyPC* PC = Cast<ALobbyPC>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+
+	//LobbyWidgetObject가 있을때만 실행시키자
+	//안그러면 위젯이 생성되지도 않았는데 바꿀려고 한다.
 	if (PC && PC->LobbyWidgetObject)
 	{
 		PC->LobbyWidgetObject->SetConnectCount(ConnectCount);

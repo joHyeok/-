@@ -14,6 +14,8 @@ class PROJECTBD_API ABattlePC : public APlayerController
 {
 	GENERATED_BODY()
 public:
+	ABattlePC();
+
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "UI")
 		TSubclassOf<class UBattleWidgetBase> BattleWidgetClass;
 

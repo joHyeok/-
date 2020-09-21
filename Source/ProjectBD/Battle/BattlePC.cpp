@@ -3,6 +3,13 @@
 
 #include "BattlePC.h"
 #include "BattleWidgetBase.h"
+#include "../Basic/BasicPCM.h"
+///#include "Blueprint/UserWidget.h"
+
+ABattlePC::ABattlePC()
+{
+	PlayerCameraManagerClass = ABasicPCM::StaticClass();
+}
 
 void ABattlePC::BeginPlay()
 {
@@ -14,8 +21,8 @@ void ABattlePC::BeginPlay()
 		if (BattleWidgetObject)
 		{
 			BattleWidgetObject->AddToViewport();
-			bShowMouseCursor = false;
-			SetInputMode(FInputModeGameOnly());
 		}
+		bShowMouseCursor = false;
+		SetInputMode(FInputModeGameOnly());
 	}
 }

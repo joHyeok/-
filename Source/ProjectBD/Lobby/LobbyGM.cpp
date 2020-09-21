@@ -40,7 +40,7 @@ void ALobbyGM::CountConnectCount()
 		GS->ConnectCount = 0;
 		for (auto Iter = GetWorld()->GetPlayerControllerIterator(); Iter; ++Iter)
 		{
-			GS->ConnectCount--;
+			GS->ConnectCount++;
 			GS->OnRep_ConnectCount(); //Host Only
 		}
 	}

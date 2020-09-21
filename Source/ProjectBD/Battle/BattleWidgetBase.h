@@ -28,5 +28,6 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void UpdateHPBar(float Percent);
+
 	
 };

@@ -14,4 +14,13 @@ class PROJECTBD_API ABattleGM : public AGameModeBase
 {
 	GENERATED_BODY()
 	
+public:
+	virtual void PostLogin(APlayerController* NewPlayer)override;
+	virtual void Logout(AController* Exiting)override;
+
+	void CountAlivePlayer();
+	void DecreaseCountPlayer();
+	virtual void PostSeamlessTravel()override;
+
+	void GoLobby();
 };

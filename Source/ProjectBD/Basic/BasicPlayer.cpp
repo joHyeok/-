@@ -18,6 +18,7 @@
 #include "Net/Unrealnetwork.h"
 #include "../Battle/BattleWidgetBase.h"
 #include "../Battle/BattlePC.h"
+#include "../Battle/BattleGM.h"
 
 
 // Sets default values
@@ -56,6 +57,8 @@ void ABasicPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 	CurrentHP = MaxHP;
+
+	//UI가 있는지 체크 확인 필수
 	OnRep_CurrentHP();
 }
 
@@ -283,7 +286,7 @@ void ABasicPlayer::StartCrouch()
 	}
 }
 
-
+//Host Only
 //데미지 처리되는 모든 액터에 구현을 해야 됨
 float ABasicPlayer::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
@@ -329,6 +332,12 @@ float ABasicPlayer::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 			//죽는거
 			//애니메이션
 			S2A_DeadMontage(FMath::FRandRange(1,3));
+
+			ABattleGM* GM = Cast<ABattleGM>(UGameplayStatics::GetGameMode(GetWorld()));
+			if (GM)
+			{
+				GM->CountAlivePlayer();
+			}
 		}
 	}
 	else if (DamageEvent.IsOfType(FRadialDamageEvent::ClassID)) //RadialDamage 처리
@@ -340,7 +349,6 @@ float ABasicPlayer::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 	else //모든 데미지 처리
 	{
 		CurrentHP -= DamageAmount;
-
 	}
 
 	UE_LOG(LogClass, Warning, TEXT("%f"), DamageAmount);
@@ -354,7 +362,11 @@ void ABasicPlayer::OnRep_CurrentHP()
 	//다른 클라이언트에서의 HP가 변하지 않게 IsLocalController를 확인해준다.
 	if (PC && PC->IsLocalController())
 	{
-		PC->BattleWidgetObject->UpdateHPBar(CurrentHP / MaxHP);
+		if (PC->BattleWidgetObject)
+		{
+			PC->BattleWidgetObject->UpdateHPBar(CurrentHP / MaxHP);
+
+		}
 	}
 }
 
