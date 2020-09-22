@@ -22,5 +22,29 @@ public:
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "UI")
 		class UBattleWidgetBase* BattleWidgetObject;
 
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "UI")
+		TSubclassOf<class UItemTooltipBase> ItemTooltipClass;
+
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "UI")
+		class UItemTooltipBase* ItemTooltipObject;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "UI")
+		TSubclassOf<class UInventoryWidgetBase> InventoryWidgetClass;
+
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "UI")
+		class UInventoryWidgetBase* InventoryWidgetObject;
+
 	virtual void BeginPlay() override;
+
+	virtual void SetupInputComponent() override;
+
+	void ToggleInventory();
+
+	void ShowItemTooltip(FString ItemName);
+
+	void HideItemTooltip();
+
+	void ShowInventory();
+
+	void HideInventory();
 };

@@ -26,6 +26,8 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	void ToggleInventory();
+
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
 	class USpringArmComponent* SpringArm;
 
@@ -191,4 +193,28 @@ public:
 	UFUNCTION(Server, Reliable)
 	void C2S_SetReload(bool newState);
 	void C2S_SetReload_Implementation(bool newState);
+
+	//보이는 아이템을 담을 리스트
+	TArray<class AMasterItem*> PickItemList;
+
+	void AddPickItem(class AMasterItem* AddItem);
+	void RemovePickItem(class AMasterItem* RemoveItem);
+
+	void Pickup();
+
+	//아이템을 집을 수 있는지 체크
+	UFUNCTION(Server, Reliable)
+	void C2S_CheckPickupItem(class AMasterItem* PickupItem);
+	void C2S_CheckPickupItem_Implementation(class AMasterItem* PickupItem);
+
+	//인벤토리에 추가
+	UFUNCTION(Client, Reliable)
+	void S2C_InsertItem(class AMasterItem* PickupItem);
+	void S2C_InsertItem_Implementation(class AMasterItem* PickupItem);
+
+	//인벤토리
+	TArray<class AMasterItem*> Inventory;
+
+	void AddInventory(class AMasterItem* Item);
+	void RemoveInventory(class AMasterItem* Item);
 };

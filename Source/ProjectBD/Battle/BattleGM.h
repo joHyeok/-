@@ -17,10 +17,14 @@ class PROJECTBD_API ABattleGM : public AGameModeBase
 public:
 	virtual void PostLogin(APlayerController* NewPlayer)override;
 	virtual void Logout(AController* Exiting)override;
+	virtual void BeginPlay() override;
 
 	void CountAlivePlayer();
 	void DecreaseCountPlayer();
 	virtual void PostSeamlessTravel()override;
 
 	void GoLobby();
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Data")
+	TSubclassOf<class AMasterItem> SpawnItemClass;
 };

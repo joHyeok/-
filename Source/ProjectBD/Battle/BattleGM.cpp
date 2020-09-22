@@ -6,6 +6,9 @@
 #include "BattlePC.h"
 #include "BattlePS.h"
 #include "../Basic/BasicPlayer.h"
+#include "Kismet/GameplayStatics.h"
+#include "../Item/ItemPoint.h"
+#include "../Item/MasterItem.h"
 
 void ABattleGM::PostLogin(APlayerController * NewPlayer)
 {
@@ -26,6 +29,20 @@ void ABattleGM::Logout(AController * Exiting)
 {
 	CountAlivePlayer();
 	Super::Logout(Exiting);
+}
+
+void ABattleGM::BeginPlay()
+{
+	Super::BeginPlay();
+	TArray<AActor*> ItemPoints;
+
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AItemPoint::StaticClass(), ItemPoints);
+
+	for (int i = 0; i < ItemPoints.Num(); ++i)
+	{
+		//(이 아이템을, 이 위치에) 스폰해주세요
+		GetWorld()->SpawnActor<AMasterItem>(SpawnItemClass, ItemPoints[i]->GetActorTransform());
+	}
 }
 
 void ABattleGM::CountAlivePlayer()

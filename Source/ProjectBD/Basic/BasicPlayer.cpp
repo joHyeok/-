@@ -19,6 +19,7 @@
 #include "../Battle/BattleWidgetBase.h"
 #include "../Battle/BattlePC.h"
 #include "../Battle/BattleGM.h"
+#include "../Item/MasterItem.h"
 
 
 // Sets default values
@@ -50,6 +51,8 @@ ABasicPlayer::ABasicPlayer()
 
 	NormalSpringArmPosition = SpringArm->GetRelativeLocation();
 	CrouchedSpringArmPosition = NormalSpringArmPosition + FVector(0, 0, -GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight() / 2);
+
+	Tags.Add(TEXT("Player"));
 }
 
 // Called when the game starts or when spawned
@@ -103,7 +106,18 @@ void ABasicPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	PlayerInputComponent->BindAction(TEXT("RightLean"), IE_Pressed, this, &ABasicPlayer::StartRightLean);
 	PlayerInputComponent->BindAction(TEXT("RightLean"), IE_Released, this, &ABasicPlayer::StopRightLean);
 
+	PlayerInputComponent->BindAction(TEXT("Pickup"), IE_Pressed, this, &ABasicPlayer::Pickup);
 
+	//PlayerInputComponent->BindAction(TEXT("Inventory"), IE_Pressed, this, &ABasicPlayer::ToggleInventory);
+}
+
+void ABasicPlayer::ToggleInventory()
+{
+	ABattlePC* PC = Cast<ABattlePC>(GetController());
+	if (PC)
+	{
+		PC->ToggleInventory();
+	}
 }
 
 void ABasicPlayer::MoveForward(float AxisValue)
@@ -601,5 +615,72 @@ void ABasicPlayer::S2A_DeadMontage_Implementation(int Number)
 void ABasicPlayer::C2S_SetReload_Implementation(bool newState)
 {
 	bIsReload = newState;
+}
+
+void ABasicPlayer::AddPickItem(AMasterItem * AddItem)
+{
+	PickItemList.Add(AddItem);
+	ABattlePC* PC = Cast<ABattlePC>(GetController());
+	if (PC)
+	{
+		PC->ShowItemTooltip(AddItem->ItemData.ItemName);
+	}
+}
+
+void ABasicPlayer::RemovePickItem(AMasterItem * RemoveItem)
+{
+	PickItemList.Remove(RemoveItem);
+	ABattlePC* PC = Cast<ABattlePC>(GetController());
+	if (PC)
+	{
+		//겹친 아이템에서 두번째로 들어온 아이템이름을 보여주고
+		//두번째의 콜리전에서 나올경우 아직 겹쳐있는 첫번째 아이템의 이름을 보여야한다.
+		//그래서 리스트에 아직 남아있는 첫번째 아이템을 검사하고 리스트맴버가 0보다 큰지
+		//리스트의 현 넘버 -1번째의 이름을 보여준다. 그게 첫번째 아이템
+		if (PickItemList.Num() > 0)
+		{
+			PC->ShowItemTooltip(PickItemList[PickItemList.Num() - 1]->ItemData.ItemName);
+		}
+		else
+		{
+			PC->HideItemTooltip();
+		}
+		
+	}
+}
+
+void ABasicPlayer::Pickup()
+{
+	if (PickItemList.Num() > 0)
+	{
+		//Server Pickup check
+		C2S_CheckPickupItem(PickItemList[PickItemList.Num() - 1]);
+	}
+}
+
+void ABasicPlayer::C2S_CheckPickupItem_Implementation(AMasterItem * PickupItem)
+{
+	//네트워크에서 이 아이템이 지워졌는지 검사하는 IsPendingKill()
+	//아이템이 지워졌는지 네트워크 상에서 딜레이가 있어서 이거로 검사한다.
+	if (PickupItem && !PickupItem->IsPendingKill())
+	{
+		S2C_InsertItem(PickupItem);
+		PickupItem->Destroy();
+	}
+}
+
+void ABasicPlayer::S2C_InsertItem_Implementation(AMasterItem * PickupItem)
+{
+	AddInventory(PickupItem);
+}
+
+void ABasicPlayer::AddInventory(AMasterItem * Item)
+{
+	Inventory.Add(Item);
+}
+
+void ABasicPlayer::RemoveInventory(AMasterItem * Item)
+{
+	Inventory.Remove(Item);
 }
 
